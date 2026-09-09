@@ -1,16 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Users, Plus, Pencil, Trash2, X, Shield, ShieldAlert,
   Search, Eye, EyeOff, Save, AlertTriangle, Check, Crown, BadgeCheck
 } from 'lucide-react';
-
-// Mock users for display (in production, these come from /api/admin/users)
-const initialUsers = [
-  { id: '1', firstName: 'Adil', lastName: 'Ahmed', email: 'adil.ahmed@police.gov', badgeNumber: 'PD-1001', role: 'INVESTIGATOR', department: 'Task Force · Case #8992', createdAt: '2024-09-08' },
-  { id: '2', firstName: 'Ahtisham', lastName: 'Ahmed', email: 'ahtisham.ahmed@police.gov', badgeNumber: 'PD-1002', role: 'OFFICER', department: 'Task Force · Case #8992', createdAt: '2024-09-08' },
-  { id: '3', firstName: 'Akash', lastName: 'Chouchan', email: 'akash.chouchan@police.gov', badgeNumber: 'PD-1003', role: 'OFFICER', department: 'Task Force · Case #8992', createdAt: '2024-09-08' },
-  { id: '4', firstName: 'Abdul', lastName: 'Ahad', email: 'abdul.ahad@police.gov', badgeNumber: 'PD-1004', role: 'AUDITOR', department: 'Task Force · Case #8992', createdAt: '2024-09-08' },
-];
+import { getUserDirectory, saveUserDirectory } from '../utils/userStore';
 
 const roleColors: Record<string, { bg: string; border: string; color: string }> = {
   ADMIN:        { bg: 'rgba(240,165,0,0.12)', border: 'rgba(240,165,0,0.4)', color: '#f0a500' },
@@ -35,7 +28,7 @@ const InputField = ({ label, value, onChange, type = 'text', placeholder = '', i
 );
 
 export const AdminPanel = () => {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<any[]>(() => Object.values(getUserDirectory()));
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
@@ -59,16 +52,41 @@ export const AdminPanel = () => {
   };
 
   const handleSave = () => {
+    const directory = getUserDirectory();
+    let newUsers;
+
     if (editingUser) {
-      setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...form } : u));
+      newUsers = users.map(u => {
+        if (u.id === editingUser.id) {
+          const updatedUser = { ...u, ...form };
+          if (!form.password) updatedUser.password = u.password;
+          directory[updatedUser.badgeNumber] = updatedUser;
+          if (editingUser.badgeNumber !== updatedUser.badgeNumber) {
+            delete directory[editingUser.badgeNumber];
+          }
+          return updatedUser;
+        }
+        return u;
+      });
     } else {
-      setUsers([{ id: Date.now().toString(), ...form, createdAt: new Date().toISOString().split('T')[0] }, ...users]);
+      const newUser = { id: form.badgeNumber, ...form, createdAt: new Date().toISOString().split('T')[0] };
+      newUsers = [newUser, ...users];
+      directory[form.badgeNumber] = newUser;
     }
+    
+    setUsers(newUsers);
+    saveUserDirectory(directory);
     setShowModal(false);
     resetForm();
   };
 
   const handleDelete = (id: string) => {
+    const directory = getUserDirectory();
+    const userToDelete = users.find(u => u.id === id);
+    if (userToDelete) {
+      delete directory[userToDelete.badgeNumber];
+      saveUserDirectory(directory);
+    }
     setUsers(users.filter(u => u.id !== id));
     setDeleteConfirm(null);
   };

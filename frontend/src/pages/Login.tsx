@@ -26,25 +26,20 @@ export const Login = () => {
     setMousePos({ x: 0, y: 0 });
   };
 
-  // ─── USER DIRECTORY ─────────────────────────────────────────────────
-  const userDirectory: Record<string, { password: string; name: string; role: string }> = {
-    'SA-0001': { password: 'SuperAdmin@2024', name: 'Super Administrator', role: 'ADMIN' },
-    'PD-1001': { password: 'Adil@2024', name: 'Adil Ahmed', role: 'INVESTIGATOR' },
-    'PD-1002': { password: 'Ahtisham@2024', name: 'Ahtisham Ahmed', role: 'OFFICER' },
-    'PD-1003': { password: 'Akash@2024', name: 'Akash Chouchan', role: 'OFFICER' },
-    'PD-1004': { password: 'Abdul@2024', name: 'Abdul Ahad', role: 'AUDITOR' },
-  };
+import { getUserDirectory } from '../utils/userStore';
 
+  // Inside component
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     await new Promise(r => setTimeout(r, 1200));
 
+    const userDirectory = getUserDirectory();
     const user = userDirectory[badge];
     if (user && user.password === password) {
       login('jwt-token-' + badge, {
-        name: user.name,
+        name: user.firstName + ' ' + user.lastName,
         role: user.role,
         badge,
         isSuperAdmin: badge === 'SA-0001',
