@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Shield, Eye, EyeOff, Fingerprint, AlertCircle, ScanLine } from 'lucide-react';
+import { getUserDirectory } from '../utils/userStore';
 
 export const Login = () => {
   const { login } = useAuth();
@@ -25,8 +26,6 @@ export const Login = () => {
   const handleMouseLeave = () => {
     setMousePos({ x: 0, y: 0 });
   };
-
-import { getUserDirectory } from '../utils/userStore';
 
   // Inside component
   const handleLogin = async (e: React.FormEvent) => {
