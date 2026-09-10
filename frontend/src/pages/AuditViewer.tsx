@@ -23,6 +23,7 @@ export const AuditViewer = () => {
   const filtered = getAuditLogs().filter(l => {
     return !search || 
       (l.user && l.user.toLowerCase().includes(search.toLowerCase())) || 
+      (l.badge && l.badge.toLowerCase().includes(search.toLowerCase())) || 
       (l.details && l.details.toLowerCase().includes(search.toLowerCase()));
   });
 

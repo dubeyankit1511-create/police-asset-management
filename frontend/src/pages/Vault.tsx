@@ -81,7 +81,13 @@ export const Vault = () => {
   };
 
   const filtered = documents.filter(doc => {
-    const matchesSearch = !searchQuery || doc.title.toLowerCase().includes(searchQuery.toLowerCase()) || doc.caseId.toLowerCase().includes(searchQuery.toLowerCase());
+    const s = searchQuery.toLowerCase();
+    const matchesSearch = !searchQuery || 
+      doc.title.toLowerCase().includes(s) || 
+      doc.caseId.toLowerCase().includes(s) ||
+      (doc.creator && doc.creator.toLowerCase().includes(s)) ||
+      (doc.hash && doc.hash.toLowerCase().includes(s));
+    
     const matchesCase = !selectedCase || doc.caseId === selectedCase;
     const matchesClass = !selectedClassification || doc.classification === selectedClassification;
     return matchesSearch && matchesCase && matchesClass;
@@ -176,7 +182,7 @@ export const Vault = () => {
           <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2" style={{ color: '#475569' }} />
           <input
             type="text"
-            placeholder="Search by title, case ID, or hash..."
+            placeholder="Search by title, case, officer name, or badge number..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-11 pr-4 py-3 rounded-xl text-sm outline-none transition-all"
