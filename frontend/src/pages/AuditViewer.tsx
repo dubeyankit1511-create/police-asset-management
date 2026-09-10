@@ -1,14 +1,6 @@
 import React, { useState } from 'react';
 import { Activity, User, Search, Filter, Shield, Link2, Clock, ChevronDown, X, Download } from 'lucide-react';
-
-const allLogs = [
-  { id: 1, action: 'DOWNLOAD', user: 'Adil Ahmed', badge: 'PD-1001', dept: 'Task Force · Case #8992', doc: 'Forensic Lab Report #FLR-2024-441', time: '10:42 AM', date: '2024-09-08', ip: '192.168.1.44', txId: '0x8f3d2a...44c9e1', risk: 'low' },
-  { id: 2, action: 'UPLOAD', user: 'Ahtisham Ahmed', badge: 'PD-1002', dept: 'Task Force · Case #8992', doc: 'Crime Scene Photos — Case #8992', time: '09:15 AM', date: '2024-09-08', ip: '192.168.1.12', txId: '0xa7e81b...221f03', risk: 'low' },
-  { id: 3, action: 'SHARE', user: 'Akash Chouchan', badge: 'PD-1003', dept: 'Task Force · Case #8992', doc: 'Suspect Interview Transcript', time: '08:30 AM', date: '2024-09-08', ip: '10.0.0.1', txId: '0xc4f923...8b71d2', risk: 'medium' },
-  { id: 4, action: 'VIEW', user: 'Abdul Ahad', badge: 'PD-1004', dept: 'Task Force · Case #8992', doc: 'Chain of Custody Form #CC-88', time: '07:00 AM', date: '2024-09-08', ip: '192.168.3.22', txId: '0x1d5e7a...f9032b', risk: 'low' },
-  { id: 5, action: 'MODIFY', user: 'Adil Ahmed', badge: 'PD-1001', dept: 'Task Force · Case #8992', doc: 'Case Summary Report — Case #8992', time: '06:12 AM', date: '2024-09-08', ip: '192.168.1.88', txId: '0xb29d4c...e30712', risk: 'high' },
-  { id: 6, action: 'DELETE', user: 'Ahtisham Ahmed', badge: 'PD-1002', dept: 'Task Force · Case #8992', doc: 'Duplicate Evidence File #DUP-92', time: '11:45 PM', date: '2024-09-07', ip: '10.0.0.1', txId: '0xf192a3...7c8e01', risk: 'high' },
-];
+import { getAuditLogs } from '../utils/dataStore';
 
 const actionStyles: Record<string, { bg: string; border: string; color: string }> = {
   DOWNLOAD: { bg: 'rgba(14,165,233,0.1)', border: 'rgba(14,165,233,0.3)', color: '#38bdf8' },
@@ -26,7 +18,7 @@ export const AuditViewer = () => {
   const [actionFilter, setActionFilter] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  const filtered = allLogs.filter(l => {
+  const filtered = getAuditLogs().filter(l => {
     const matchSearch = !search || l.user.toLowerCase().includes(search.toLowerCase()) || l.doc.toLowerCase().includes(search.toLowerCase()) || l.badge.toLowerCase().includes(search.toLowerCase());
     const matchAction = !actionFilter || l.action === actionFilter;
     return matchSearch && matchAction;

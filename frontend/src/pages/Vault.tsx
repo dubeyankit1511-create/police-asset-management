@@ -3,14 +3,8 @@ import {
   Search, Upload, File, ShieldCheck, Lock, Filter, X,
   ChevronDown, Hash, FileText, Image, FileSpreadsheet, Eye, Download, Share2, MoreHorizontal
 } from 'lucide-react';
-
-const mockDocuments = [
-  { id: 1, title: 'Suspect Interview Transcript', caseId: 'CASE-8992', hash: 'e3b0c44298fc1c14...9a3e7', status: 'Verified', classification: 'CONFIDENTIAL', type: 'PDF', size: '2.4 MB', date: '2024-09-08', creator: 'Adil Ahmed · PD-1001' },
-  { id: 2, title: 'Crime Scene Photographs - Set A', caseId: 'CASE-8992', hash: '8d969eef6ecad3c2...b5e89', status: 'Verified', classification: 'RESTRICTED', type: 'ZIP', size: '148 MB', date: '2024-09-07', creator: 'Ahtisham Ahmed · PD-1002' },
-  { id: 3, title: 'Forensic Lab Report #FLR-2024-441', caseId: 'CASE-8992', hash: '2d711642b726b04...c5d29', status: 'Verified', classification: 'CONFIDENTIAL', type: 'PDF', size: '890 KB', date: '2024-09-06', creator: 'Akash Chouchan · PD-1003' },
-  { id: 4, title: 'Chain of Custody Form #CC-88', caseId: 'CASE-8992', hash: '5e884898da28047...d4e3c', status: 'Pending', classification: 'PUBLIC', type: 'PDF', size: '120 KB', date: '2024-09-05', creator: 'Abdul Ahad · PD-1004' },
-  { id: 5, title: 'Surveillance Footage - Cam 7', caseId: 'CASE-8992', hash: 'a1b2c3d4e5f67890...9f8e7', status: 'Verified', classification: 'RESTRICTED', type: 'MP4', size: '2.1 GB', date: '2024-09-04', creator: 'Adil Ahmed · PD-1001' },
-];
+import { useAuth } from '../context/AuthContext';
+import { getDocumentList, saveDocumentList, logActivity } from '../utils/dataStore';
 
 const classificationColors: Record<string, { bg: string; border: string; text: string }> = {
   CONFIDENTIAL: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', text: '#f87171' },
@@ -23,12 +17,51 @@ const typeIcons: Record<string, any> = {
 };
 
 export const Vault = () => {
+  const { user } = useAuth();
+  const [documents, setDocuments] = useState<any[]>(() => getDocumentList());
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCase, setSelectedCase] = useState('');
   const [selectedClassification, setSelectedClassification] = useState('');
   const [showUpload, setShowUpload] = useState(false);
 
-  const filtered = mockDocuments.filter(doc => {
+  // Upload Form State
+  const [upTitle, setUpTitle] = useState('');
+  const [upCaseId, setUpCaseId] = useState('');
+  const [upClass, setUpClass] = useState('RESTRICTED');
+  const [fileAttached, setFileAttached] = useState<File | null>(null);
+
+  const handleUpload = () => {
+    if (!upTitle || !upCaseId) return alert('Please provide Title and Case ID');
+    
+    const newDoc = {
+      id: Date.now().toString(),
+      title: upTitle,
+      caseId: upCaseId,
+      classification: upClass,
+      hash: '0x' + Array.from({length: 16}, () => Math.floor(Math.random()*16).toString(16)).join('') + '...f9e',
+      status: 'Verified',
+      type: fileAttached ? fileAttached.name.split('.').pop()?.toUpperCase() || 'PDF' : 'PDF',
+      size: fileAttached ? (fileAttached.size / 1024 / 1024).toFixed(2) + ' MB' : '1.2 MB',
+      date: new Date().toISOString().split('T')[0],
+      creator: user ? `${user.name} \u00B7 ${user.badge}` : 'Unknown Officer'
+    };
+
+    const updatedDocs = [newDoc, ...documents];
+    setDocuments(updatedDocs);
+    saveDocumentList(updatedDocs);
+    
+    // Log the activity
+    logActivity('UPLOAD', `Uploaded document: ${upTitle}`, user ? user.name : 'Unknown User', '192.168.1.10', upClass === 'PUBLIC' ? 'LOW' : 'MEDIUM');
+
+    // Reset and close
+    setUpTitle('');
+    setUpCaseId('');
+    setUpClass('RESTRICTED');
+    setFileAttached(null);
+    setShowUpload(false);
+  };
+
+  const filtered = documents.filter(doc => {
     const matchesSearch = !searchQuery || doc.title.toLowerCase().includes(searchQuery.toLowerCase()) || doc.caseId.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCase = !selectedCase || doc.caseId === selectedCase;
     const matchesClass = !selectedClassification || doc.classification === selectedClassification;
@@ -66,17 +99,21 @@ export const Vault = () => {
             </div>
             
             {/* Drop zone */}
-            <div className="border-2 border-dashed rounded-xl p-10 text-center mb-5 transition-colors cursor-pointer"
-              style={{ borderColor: 'rgba(240,165,0,0.2)', background: 'rgba(240,165,0,0.02)' }}>
-              <Upload className="w-10 h-10 mx-auto mb-3" style={{ color: '#f0a500' }} />
-              <p className="text-sm font-semibold" style={{ color: '#94a3b8' }}>Drop files here or click to browse</p>
-              <p className="text-xs mt-1" style={{ color: '#334155' }}>PDF, DOCX, ZIP, MP4, JPG · Max 500MB</p>
-            </div>
+            <label className="border-2 border-dashed rounded-xl p-10 text-center mb-5 transition-colors cursor-pointer block"
+              style={{ borderColor: fileAttached ? '#10b981' : 'rgba(240,165,0,0.2)', background: 'rgba(240,165,0,0.02)' }}>
+              <input type="file" className="hidden" onChange={e => setFileAttached(e.target.files?.[0] || null)} />
+              <Upload className="w-10 h-10 mx-auto mb-3" style={{ color: fileAttached ? '#10b981' : '#f0a500' }} />
+              <p className="text-sm font-semibold" style={{ color: fileAttached ? '#10b981' : '#94a3b8' }}>
+                {fileAttached ? fileAttached.name : 'Drop files here or click to browse'}
+              </p>
+              <p className="text-xs mt-1" style={{ color: '#334155' }}>PDF, DOCX, ZIP, MP4, JPG A Max 500MB</p>
+            </label>
 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: '#64748b' }}>Document Title</label>
                 <input type="text" placeholder="e.g. Forensic Lab Report"
+                  value={upTitle} onChange={e => setUpTitle(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
                   style={{ background: 'rgba(10,15,30,0.8)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }} />
               </div>
@@ -84,16 +121,18 @@ export const Vault = () => {
                 <div>
                   <label className="block text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: '#64748b' }}>Case ID</label>
                   <input type="text" placeholder="e.g. CASE-401"
+                    value={upCaseId} onChange={e => setUpCaseId(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
                     style={{ background: 'rgba(10,15,30,0.8)', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0' }} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: '#64748b' }}>Classification</label>
                   <select className="w-full px-4 py-2.5 rounded-xl text-sm outline-none appearance-none"
+                    value={upClass} onChange={e => setUpClass(e.target.value)}
                     style={{ background: 'rgba(10,15,30,0.8)', border: '1px solid rgba(255,255,255,0.08)', color: '#94a3b8' }}>
-                    <option>RESTRICTED</option>
-                    <option>CONFIDENTIAL</option>
-                    <option>PUBLIC</option>
+                    <option value="RESTRICTED">RESTRICTED</option>
+                    <option value="CONFIDENTIAL">CONFIDENTIAL</option>
+                    <option value="PUBLIC">PUBLIC</option>
                   </select>
                 </div>
               </div>
@@ -103,7 +142,7 @@ export const Vault = () => {
               <button onClick={() => setShowUpload(false)}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors"
                 style={{ border: '1px solid rgba(255,255,255,0.08)', color: '#64748b' }}>Cancel</button>
-              <button className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
+              <button onClick={handleUpload} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2"
                 style={{ background: 'linear-gradient(135deg, #f0a500, #d97706)', color: '#030712', boxShadow: '0 0 16px rgba(240,165,0,0.3)' }}>
                 <Lock className="w-4 h-4" /> Encrypt & Upload
               </button>
