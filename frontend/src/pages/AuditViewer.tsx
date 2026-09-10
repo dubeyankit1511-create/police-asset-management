@@ -20,7 +20,7 @@ export const AuditViewer = () => {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [allDocs] = useState(() => getDocumentList());
 
-  const filtered = getAuditLogs().filter(l => {
+  const filtered = getAuditLogs().filter((l: any) => {
     return !search || 
       (l.user && l.user.toLowerCase().includes(search.toLowerCase())) || 
       (l.badge && l.badge.toLowerCase().includes(search.toLowerCase())) || 
