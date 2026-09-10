@@ -61,18 +61,23 @@ export const Vault = () => {
     };
 
     const updatedDocs = [newDoc, ...documents];
-    setDocuments(updatedDocs);
-    saveDocumentList(updatedDocs);
     
-    // Log the activity
-    logActivity('UPLOAD', `Uploaded document: ${upTitle}`, user ? user.name : 'Unknown User', '192.168.1.10', upClass === 'PUBLIC' ? 'LOW' : 'MEDIUM');
+    try {
+      saveDocumentList(updatedDocs);
+      setDocuments(updatedDocs);
+      
+      // Log the activity
+      logActivity('UPLOAD', `Uploaded document: ${upTitle}`, user || 'Unknown User', '192.168.1.10', upClass === 'PUBLIC' ? 'LOW' : 'MEDIUM');
 
-    // Reset and close
-    setUpTitle('');
-    setUpCaseId('');
-    setUpClass('RESTRICTED');
-    setFileAttached(null);
-    setShowUpload(false);
+      // Reset and close
+      setUpTitle('');
+      setUpCaseId('');
+      setUpClass('RESTRICTED');
+      setFileAttached(null);
+      setShowUpload(false);
+    } catch (e) {
+      alert("Error: File is too large. The demo uses your browser's local storage which is limited to 5MB. Please choose a smaller file.");
+    }
   };
 
   const filtered = documents.filter(doc => {
@@ -289,7 +294,7 @@ export const Vault = () => {
                             a.href = doc.fileData;
                             a.download = doc.originalName || `${doc.title}.${doc.type.toLowerCase()}`;
                             a.click();
-                            logActivity('DOWNLOAD', `Downloaded document: ${doc.title}`, user ? user.name : 'Unknown', '192.168.1.10', 'LOW');
+                            logActivity('DOWNLOAD', `Downloaded document: ${doc.title}`, user || 'Unknown', '192.168.1.10', 'LOW');
                           } else {
                             alert('File content not available for this record.');
                           }

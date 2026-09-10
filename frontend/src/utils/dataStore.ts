@@ -21,12 +21,20 @@ export const saveAuditLogs = (logs: any[]) => {
   localStorage.setItem('SECURE_SYNC_LOGS', JSON.stringify(logs));
 };
 
-export const logActivity = (action: string, details: string, user: string, ip: string = '192.168.1.100', risk: string = 'LOW') => {
+export const logActivity = (action: string, details: string, userObj: any, ip: string = '192.168.1.100', risk: string = 'LOW') => {
   const logs = getAuditLogs();
+  
+  // Try to safely parse the user object or default to empty strings
+  const name = userObj?.name || (typeof userObj === 'string' ? userObj : 'System');
+  const badge = userObj?.badge || '';
+  const dept = userObj?.department || userObj?.dept || (badge === 'SA-0001' ? 'Central Command' : 'Task Force A - Case #8992');
+
   const newLog = {
     id: Date.now().toString(),
     timestamp: new Date().toISOString(),
-    user,
+    user: name,
+    badge,
+    dept,
     action,
     details,
     ip,
