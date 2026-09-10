@@ -17,16 +17,13 @@ const riskDot: Record<string, string> = { low: '#10b981', medium: '#f59e0b', hig
 export const AuditViewer = () => {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
-  const [actionFilter, setActionFilter] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [allDocs] = useState(() => getDocumentList());
 
   const filtered = getAuditLogs().filter(l => {
-    const matchSearch = !search || 
+    return !search || 
       (l.user && l.user.toLowerCase().includes(search.toLowerCase())) || 
       (l.details && l.details.toLowerCase().includes(search.toLowerCase()));
-    const matchAction = !actionFilter || l.action === actionFilter;
-    return matchSearch && matchAction;
   });
 
   return (
@@ -60,15 +57,6 @@ export const AuditViewer = () => {
               <X className="w-4 h-4" style={{ color: '#475569' }} />
             </button>
           )}
-        </div>
-        <div className="relative">
-          <select value={actionFilter} onChange={e => setActionFilter(e.target.value)}
-            className="appearance-none pl-4 pr-10 py-3 rounded-xl text-sm outline-none cursor-pointer"
-            style={{ background: 'rgba(13,27,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', color: '#94a3b8' }}>
-            <option value="">All Actions</option>
-            {Object.keys(actionStyles).map(a => <option key={a} value={a}>{a}</option>)}
-          </select>
-          <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#475569' }} />
         </div>
       </div>
 
