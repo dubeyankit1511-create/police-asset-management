@@ -72,7 +72,7 @@ export const AccessLogs = () => {
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                   style={{ 
                     background: isLogin ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)', 
-                    border: \1px solid \\ 
+                    border: isLogin ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(239,68,68,0.3)'
                   }}>
                   {isLogin ? (
                     <LogIn className="w-5 h-5" style={{ color: '#34d399' }} />
