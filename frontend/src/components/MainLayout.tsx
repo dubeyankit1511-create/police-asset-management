@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUISettings } from '../context/UIContext';
 import {
   Shield, LayoutDashboard, FileLock2, History, LogOut,
-  ZoomIn, ZoomOut, Sun, Moon, Type, ChevronRight, Bell, Crown, UserCheck, ClipboardCheck, X
+  ZoomIn, ZoomOut, Sun, Moon, Type, ChevronRight, Bell, Crown, UserCheck, ClipboardCheck, X, Settings
 } from 'lucide-react';
 import { getNotifications, markAllNotificationsRead, clearNotifications } from '../utils/dataStore';
 
@@ -14,6 +14,7 @@ export const MainLayout = () => {
   const location = useLocation();
   const { fontSize, zoom, darkMode, setFontSize, setZoom, toggleDarkMode } = useUISettings();
   const [showNotifs, setShowNotifs] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [notifList, setNotifList] = useState<any[]>(() => getNotifications(user?.role || 'USER'));
 
   const role = user?.role === 'ADMIN' ? 'ADMIN' : 'USER';
@@ -101,51 +102,6 @@ export const MainLayout = () => {
             );
           })}
         </nav>
-
-        {/* UI Controls */}
-        <div className="px-3 pb-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <p className="text-[10px] tracking-widest uppercase font-semibold px-2 py-3" style={{ color: '#334155' }}>Display</p>
-
-          {/* Font size */}
-          <div className="flex items-center gap-2 px-2 mb-3">
-            <Type className="w-3 h-3 shrink-0" style={{ color: '#475569' }} />
-            <span className="text-[10px] flex-1" style={{ color: '#475569' }}>Font Size: {fontSize}px</span>
-            <button onClick={() => setFontSize(Math.max(12, fontSize - 1))}
-              className="w-6 h-6 rounded flex items-center justify-center text-xs transition-colors"
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>-</button>
-            <button onClick={() => setFontSize(Math.min(20, fontSize + 1))}
-              className="w-6 h-6 rounded flex items-center justify-center text-xs transition-colors"
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>+</button>
-          </div>
-
-          {/* Zoom */}
-          <div className="flex items-center gap-2 px-2 mb-3">
-            <ZoomIn className="w-3 h-3 shrink-0" style={{ color: '#475569' }} />
-            <span className="text-[10px] flex-1" style={{ color: '#475569' }}>Zoom: {Math.round(zoom * 100)}%</span>
-            <button onClick={() => setZoom(Math.max(0.7, parseFloat((zoom - 0.1).toFixed(1))))}
-              className="w-6 h-6 rounded flex items-center justify-center transition-colors"
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
-              <ZoomOut className="w-3 h-3" />
-            </button>
-            <button onClick={() => setZoom(Math.min(1.5, parseFloat((zoom + 0.1).toFixed(1))))}
-              className="w-6 h-6 rounded flex items-center justify-center transition-colors"
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
-              <ZoomIn className="w-3 h-3" />
-            </button>
-          </div>
-
-          {/* Dark mode toggle */}
-          <div className="flex items-center gap-2 px-2 mb-4">
-            {darkMode ? <Moon className="w-3 h-3 shrink-0" style={{ color: '#475569' }} /> : <Sun className="w-3 h-3 shrink-0" style={{ color: '#f0a500' }} />}
-            <span className="text-[10px] flex-1" style={{ color: '#475569' }}>{darkMode ? 'Dark Mode' : 'Light Mode'}</span>
-            <button onClick={toggleDarkMode}
-              className="w-10 h-5 rounded-full transition-all relative"
-              style={{ background: darkMode ? '#1e3a5f' : '#f0a500' }}>
-              <div className="w-4 h-4 rounded-full absolute top-0.5 transition-all"
-                style={{ left: darkMode ? '2px' : '22px', background: darkMode ? '#64748b' : '#030712' }} />
-            </button>
-          </div>
-        </div>
 
         {/* User profile + Notification Bell */}
         <div className="p-4 relative" style={{ borderTop: '1px solid rgba(240,165,0,0.1)' }}>
@@ -235,7 +191,7 @@ export const MainLayout = () => {
       {/* Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <div className="h-14 flex items-center px-6 shrink-0"
+        <div className="h-14 flex items-center px-6 shrink-0 relative"
           style={{ background: 'rgba(10,15,30,0.9)', borderBottom: '1px solid rgba(240,165,0,0.1)', backdropFilter: 'blur(10px)' }}>
           <div className="flex-1">
             <div className="flex items-center gap-2">
@@ -245,8 +201,69 @@ export const MainLayout = () => {
               </span>
             </div>
           </div>
-          <div className="text-xs font-mono" style={{ color: '#334155' }}>
-            {new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+          <div className="flex items-center gap-4">
+            <div className="text-xs font-mono" style={{ color: '#334155' }}>
+              {new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+            </div>
+            
+            <button onClick={() => setShowSettings(!showSettings)}
+              className="p-1.5 rounded-lg transition-colors hover:bg-white/5"
+              style={{ color: showSettings ? '#f0a500' : '#475569' }}>
+              <Settings className="w-4 h-4" />
+            </button>
+
+            {/* Settings Dropdown */}
+            {showSettings && (
+              <div className="absolute top-12 right-6 w-64 rounded-xl p-4 shadow-2xl z-50 animate-fade-in-up"
+                style={{ background: '#0a0f1e', border: '1px solid rgba(240,165,0,0.2)' }}>
+                <div className="flex items-center justify-between mb-4 pb-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span className="text-xs font-bold" style={{ color: '#e2e8f0' }}>Display Settings</span>
+                  <button onClick={() => setShowSettings(false)}>
+                    <X className="w-3.5 h-3.5" style={{ color: '#475569' }} />
+                  </button>
+                </div>
+                
+                {/* Font size */}
+                <div className="flex items-center gap-2 mb-4">
+                  <Type className="w-3 h-3 shrink-0" style={{ color: '#475569' }} />
+                  <span className="text-[10px] flex-1" style={{ color: '#475569' }}>Font Size: {fontSize}px</span>
+                  <button onClick={() => setFontSize(Math.max(12, fontSize - 1))}
+                    className="w-6 h-6 rounded flex items-center justify-center text-xs transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>-</button>
+                  <button onClick={() => setFontSize(Math.min(20, fontSize + 1))}
+                    className="w-6 h-6 rounded flex items-center justify-center text-xs transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>+</button>
+                </div>
+
+                {/* Zoom */}
+                <div className="flex items-center gap-2 mb-4">
+                  <ZoomIn className="w-3 h-3 shrink-0" style={{ color: '#475569' }} />
+                  <span className="text-[10px] flex-1" style={{ color: '#475569' }}>Zoom: {Math.round(zoom * 100)}%</span>
+                  <button onClick={() => setZoom(Math.max(0.7, parseFloat((zoom - 0.1).toFixed(1))))}
+                    className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
+                    <ZoomOut className="w-3 h-3" />
+                  </button>
+                  <button onClick={() => setZoom(Math.min(1.5, parseFloat((zoom + 0.1).toFixed(1))))}
+                    className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+                    style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>
+                    <ZoomIn className="w-3 h-3" />
+                  </button>
+                </div>
+
+                {/* Dark mode toggle */}
+                <div className="flex items-center gap-2">
+                  {darkMode ? <Moon className="w-3 h-3 shrink-0" style={{ color: '#475569' }} /> : <Sun className="w-3 h-3 shrink-0" style={{ color: '#f0a500' }} />}
+                  <span className="text-[10px] flex-1" style={{ color: '#475569' }}>{darkMode ? 'Dark Mode' : 'Light Mode'}</span>
+                  <button onClick={toggleDarkMode}
+                    className="w-10 h-5 rounded-full transition-all relative"
+                    style={{ background: darkMode ? '#1e3a5f' : '#f0a500' }}>
+                    <div className="w-4 h-4 rounded-full absolute top-0.5 transition-all"
+                      style={{ left: darkMode ? '2px' : '22px', background: darkMode ? '#64748b' : '#030712' }} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

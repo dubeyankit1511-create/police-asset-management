@@ -5,11 +5,11 @@ import {
 } from 'lucide-react';
 import { getUserDirectory, saveUserDirectory } from '../utils/userStore';
 
-const roleColors: Record<string, { bg: string; border: string; color: string }> = {
-  ADMIN:        { bg: 'rgba(240,165,0,0.12)', border: 'rgba(240,165,0,0.4)', color: '#f0a500' },
-  OFFICER:      { bg: 'rgba(14,165,233,0.12)', border: 'rgba(14,165,233,0.3)', color: '#38bdf8' },
-  INVESTIGATOR: { bg: 'rgba(168,85,247,0.12)', border: 'rgba(168,85,247,0.3)', color: '#c084fc' },
-  AUDITOR:      { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)', color: '#34d399' },
+const roleColors: Record<string, { bg: string; color: string; border: string }> = {
+  ADMIN:        { bg: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: 'transparent' }, // Indigo/Violet
+  OFFICER:      { bg: 'rgba(56,189,248,0.15)', color: '#7dd3fc', border: 'transparent' }, // Sky
+  INVESTIGATOR: { bg: 'rgba(168,85,247,0.15)', color: '#d8b4fe', border: 'transparent' }, // Purple
+  AUDITOR:      { bg: 'rgba(20,184,166,0.15)', color: '#5eead4', border: 'transparent' }, // Teal
 };
 
 const InputField = ({ label, value, onChange, type = 'text', placeholder = '', icon: Icon }: any) => (
@@ -156,11 +156,11 @@ export const AdminPanel = () => {
       </div>
 
       {/* Warning banner */}
-      <div className="flex items-center gap-3 px-5 py-3 rounded-xl"
-        style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}>
-        <AlertTriangle className="w-4 h-4 shrink-0" style={{ color: '#ef4444' }} />
-        <p className="text-xs" style={{ color: '#f87171' }}>
-          <span className="font-bold">RESTRICTED ACCESS</span> — All actions on this panel are logged in the immutable audit trail. Misuse is a criminal offense.
+      <div className="flex items-center gap-3 px-4 py-2"
+        style={{ background: 'rgba(15,23,42,0.4)', borderLeft: '3px solid #ef4444', borderTop: '1px solid rgba(255,255,255,0.05)', borderRight: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <AlertTriangle className="w-3.5 h-3.5 shrink-0" style={{ color: '#ef4444' }} />
+        <p className="text-xs truncate" style={{ color: '#94a3b8' }}>
+          <span className="font-bold text-red-400">RESTRICTED ACCESS</span> — All actions on this panel are logged in the immutable audit trail.
         </p>
       </div>
 
@@ -172,7 +172,8 @@ export const AdminPanel = () => {
           { label: 'Investigators', value: users.filter(u => u.role === 'INVESTIGATOR').length, color: '#c084fc', icon: ShieldAlert },
           { label: 'Auditors', value: users.filter(u => u.role === 'AUDITOR').length, color: '#34d399', icon: BadgeCheck },
         ].map(s => (
-          <div key={s.label} className="rounded-xl p-4 card-glass">
+          <div key={s.label} className="rounded-xl p-4 transition-all hover:shadow-[0_0_20px_rgba(56,189,248,0.15)]"
+            style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#475569' }}>{s.label}</span>
               <s.icon className="w-4 h-4" style={{ color: s.color }} />
@@ -197,7 +198,8 @@ export const AdminPanel = () => {
       </div>
 
       {/* Users Table */}
-      <div className="rounded-2xl overflow-hidden card-glass">
+      <div className="rounded-2xl overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(56,189,248,0.15)]"
+        style={{ background: 'rgba(15,23,42,0.75)', border: '1px solid rgba(255,255,255,0.1)' }}>
         <table className="w-full">
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(240,165,0,0.1)' }}>
@@ -230,6 +232,9 @@ export const AdminPanel = () => {
                       style={{ background: 'rgba(240,165,0,0.08)', color: '#f0a500', border: '1px solid rgba(240,165,0,0.15)' }}>
                       {u.badgeNumber}
                     </span>
+                    <div className="text-[9px] font-mono mt-1.5 opacity-60" style={{ color: '#94a3b8' }}>
+                      KEY-SHA256: {Array.from(u.badgeNumber).reduce((hash: string, char: any) => (hash + char.charCodeAt(0).toString(16)), '0x')}...a7
+                    </div>
                   </td>
                   <td className="px-5 py-4">
                     <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full"
