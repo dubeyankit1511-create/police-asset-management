@@ -21,7 +21,7 @@ export const saveAuditLogs = (logs: any[]) => {
   localStorage.setItem('SECURE_SYNC_LOGS', JSON.stringify(logs));
 };
 
-export const logActivity = (action: string, details: string, userObj: any, ip: string = '192.168.1.100', risk: string = 'LOW') => {
+export const logActivity = (action: string, details: string, userObj: any, ip: string = '192.168.1.100', risk: string = 'LOW', docId?: string) => {
   const logs = getAuditLogs();
   
   // Try to safely parse the user object or default to empty strings
@@ -39,6 +39,7 @@ export const logActivity = (action: string, details: string, userObj: any, ip: s
     details,
     ip,
     risk,
+    docId,
     hash: '0x' + Array.from({length: 16}, () => Math.floor(Math.random()*16).toString(16)).join('') + '...d2e'
   };
   saveAuditLogs([newLog, ...logs]);

@@ -67,7 +67,7 @@ export const Vault = () => {
       setDocuments(updatedDocs);
       
       // Log the activity
-      logActivity('UPLOAD', `Uploaded document: ${upTitle}`, user || 'Unknown User', '192.168.1.10', upClass === 'PUBLIC' ? 'LOW' : 'MEDIUM');
+      logActivity('UPLOAD', `Uploaded document: ${upTitle}`, user || 'Unknown User', '192.168.1.10', upClass === 'PUBLIC' ? 'LOW' : 'MEDIUM', newDoc.id);
 
       // Reset and close
       setUpTitle('');

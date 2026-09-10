@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Activity, User, Search, Filter, Shield, Link2, Clock, ChevronDown, X, Download } from 'lucide-react';
-import { getAuditLogs } from '../utils/dataStore';
+import { useAuth } from '../context/AuthContext';
+import { getAuditLogs, getDocumentList, logActivity } from '../utils/dataStore';
 
 const actionStyles: Record<string, { bg: string; border: string; color: string }> = {
   DOWNLOAD: { bg: 'rgba(14,165,233,0.1)', border: 'rgba(14,165,233,0.3)', color: '#38bdf8' },
@@ -14,9 +15,11 @@ const actionStyles: Record<string, { bg: string; border: string; color: string }
 const riskDot: Record<string, string> = { low: '#10b981', medium: '#f59e0b', high: '#ef4444' };
 
 export const AuditViewer = () => {
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [actionFilter, setActionFilter] = useState('');
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [allDocs] = useState(() => getDocumentList());
 
   const filtered = getAuditLogs().filter(l => {
     const matchSearch = !search || 
@@ -25,6 +28,31 @@ export const AuditViewer = () => {
     const matchAction = !actionFilter || l.action === actionFilter;
     return matchSearch && matchAction;
   });
+
+  const handleExport = () => {
+    const csvRows = [
+      ['Timestamp', 'User', 'Badge', 'Action', 'Details', 'Risk', 'Transaction Hash']
+    ];
+    filtered.forEach(log => {
+      csvRows.push([
+        log.timestamp || log.date,
+        `"${log.user}"`,
+        log.badge || '',
+        log.action,
+        `"${log.details || log.doc}"`,
+        log.risk || '',
+        log.hash || log.txId || ''
+      ]);
+    });
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `audit_log_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -38,7 +66,7 @@ export const AuditViewer = () => {
             Blockchain-anchored system activity log - Every action is permanently recorded
           </p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+        <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:bg-white/5"
           style={{ background: 'rgba(13,27,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', color: '#94a3b8' }}>
           <Download className="w-3.5 h-3.5" /> Export Log
         </button>
@@ -164,9 +192,34 @@ export const AuditViewer = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 pt-1">
+                    
+                    {log.action === 'UPLOAD' && log.docId && (
+                      <div className="pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const doc = allDocs.find((d: any) => d.id === log.docId);
+                            if (doc && doc.fileData) {
+                              const a = document.createElement('a');
+                              a.href = doc.fileData;
+                              a.download = doc.originalName || `${doc.title}.${doc.type.toLowerCase()}`;
+                              a.click();
+                              logActivity('DOWNLOAD', `Downloaded document for verification: ${doc.title}`, user || 'Unknown Admin', '192.168.1.10', 'LOW');
+                            } else {
+                              alert('Original file content is no longer available or was not cached in this browser session.');
+                            }
+                          }}
+                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:bg-white/10 w-max"
+                          style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}
+                        >
+                          <Download className="w-3.5 h-3.5" /> Download Document for Verification
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-1.5 pt-1 mt-2">
                       <Clock className="w-3 h-3" style={{ color: '#334155' }} />
-                      <span className="text-[10px]" style={{ color: '#334155' }}>Timestamp recorded in UTC · Cannot be modified or deleted</span>
+                      <span className="text-[10px]" style={{ color: '#334155' }}>Timestamp recorded in UTC - Cannot be modified or deleted</span>
                     </div>
                   </div>
                 </div>

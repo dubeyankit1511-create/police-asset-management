@@ -21,9 +21,11 @@ export const MainLayout = () => {
   const navItems = [
     { name: 'Command Center', path: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { name: 'Evidence Vault', path: '/vault', icon: FileLock2, label: 'Documents' },
-    { name: 'Audit Trail', path: '/audit', icon: History, label: 'Logs' },
-    // Admin-only nav item
-    ...(user?.role === 'ADMIN' ? [{ name: 'Admin Panel', path: '/admin', icon: Crown, label: 'User Management' }] : []),
+    // Admin-only nav items
+    ...(user?.role === 'ADMIN' ? [
+      { name: 'Audit Trail', path: '/audit', icon: History, label: 'Logs' },
+      { name: 'Admin Panel', path: '/admin', icon: Crown, label: 'User Management' }
+    ] : []),
   ];
 
   return (
