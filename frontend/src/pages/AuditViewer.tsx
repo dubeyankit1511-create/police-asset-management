@@ -29,31 +29,6 @@ export const AuditViewer = () => {
     return matchSearch && matchAction;
   });
 
-  const handleExport = () => {
-    const csvRows = [
-      ['Timestamp', 'User', 'Badge', 'Action', 'Details', 'Risk', 'Transaction Hash']
-    ];
-    filtered.forEach(log => {
-      csvRows.push([
-        log.timestamp || log.date,
-        `"${log.user}"`,
-        log.badge || '',
-        log.action,
-        `"${log.details || log.doc}"`,
-        log.risk || '',
-        log.hash || log.txId || ''
-      ]);
-    });
-    const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `audit_log_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  };
-
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
@@ -66,10 +41,6 @@ export const AuditViewer = () => {
             Blockchain-anchored system activity log - Every action is permanently recorded
           </p>
         </div>
-        <button onClick={handleExport} className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:bg-white/5"
-          style={{ background: 'rgba(13,27,42,0.8)', border: '1px solid rgba(255,255,255,0.06)', color: '#94a3b8' }}>
-          <Download className="w-3.5 h-3.5" /> Export Log
-        </button>
       </div>
 
       {/* Filters */}
@@ -193,12 +164,12 @@ export const AuditViewer = () => {
                       </div>
                     </div>
                     
-                    {log.action === 'UPLOAD' && log.docId && (
+                    {log.action === 'UPLOAD' && (
                       <div className="pt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.04)' }}>
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            const doc = allDocs.find((d: any) => d.id === log.docId);
+                            const doc = allDocs.find((d: any) => d.id === log.docId || (log.details && log.details.includes(d.title)));
                             if (doc && doc.fileData) {
                               const a = document.createElement('a');
                               a.href = doc.fileData;

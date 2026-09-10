@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Search, Upload, File, ShieldCheck, Lock, Filter, X,
-  ChevronDown, Hash, FileText, Image, FileSpreadsheet, Eye, Download, Share2, MoreHorizontal
+  ChevronDown, Hash, FileText, Image, FileSpreadsheet, Eye, Download, Share2, MoreHorizontal, Edit3, Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getDocumentList, saveDocumentList, logActivity } from '../utils/dataStore';
@@ -283,7 +283,17 @@ export const Vault = () => {
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-1">
-                      <button className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                      <button 
+                        onClick={() => {
+                          logActivity('VIEW', `Viewed document details: ${doc.title}`, user || 'Unknown', '192.168.1.10', 'LOW', doc.id);
+                          if (doc.fileData) {
+                            const w = window.open();
+                            if (w) w.document.write(`<iframe src="${doc.fileData}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+                          } else {
+                            alert('Secure preview not available. File data missing.');
+                          }
+                        }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
                         style={{ background: 'rgba(255,255,255,0.03)' }} title="View">
                         <Eye className="w-3.5 h-3.5" style={{ color: '#64748b' }} />
                       </button>
@@ -294,7 +304,7 @@ export const Vault = () => {
                             a.href = doc.fileData;
                             a.download = doc.originalName || `${doc.title}.${doc.type.toLowerCase()}`;
                             a.click();
-                            logActivity('DOWNLOAD', `Downloaded document: ${doc.title}`, user || 'Unknown', '192.168.1.10', 'LOW');
+                            logActivity('DOWNLOAD', `Downloaded document: ${doc.title}`, user || 'Unknown', '192.168.1.10', 'LOW', doc.id);
                           } else {
                             alert('File content not available for this record.');
                           }
@@ -303,13 +313,44 @@ export const Vault = () => {
                         style={{ background: 'rgba(255,255,255,0.03)' }} title="Download">
                         <Download className="w-3.5 h-3.5" style={{ color: '#64748b' }} />
                       </button>
-                      <button className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                      <button 
+                        onClick={() => {
+                          const target = prompt('Enter officer badge number to securely share this document with:');
+                          if (target) {
+                            logActivity('SHARE', `Shared document: ${doc.title} with ${target}`, user || 'Unknown', '192.168.1.10', 'MEDIUM', doc.id);
+                            alert(`Document securely shared with ${target}`);
+                          }
+                        }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
                         style={{ background: 'rgba(255,255,255,0.03)' }} title="Share">
                         <Share2 className="w-3.5 h-3.5" style={{ color: '#64748b' }} />
                       </button>
-                      <button className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
-                        style={{ background: 'rgba(255,255,255,0.03)' }} title="More">
-                        <MoreHorizontal className="w-3.5 h-3.5" style={{ color: '#64748b' }} />
+                      <button 
+                        onClick={() => {
+                          const newClass = prompt(`Current classification is ${doc.classification}.\nEnter new classification (PUBLIC, RESTRICTED, CONFIDENTIAL):`, doc.classification);
+                          if (newClass && ['PUBLIC', 'RESTRICTED', 'CONFIDENTIAL'].includes(newClass.toUpperCase())) {
+                            const newDocs = documents.map(d => d.id === doc.id ? { ...d, classification: newClass.toUpperCase() } : d);
+                            setDocuments(newDocs);
+                            saveDocumentList(newDocs);
+                            logActivity('MODIFY', `Changed classification of ${doc.title} to ${newClass.toUpperCase()}`, user || 'Unknown', '192.168.1.10', 'HIGH', doc.id);
+                          }
+                        }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
+                        style={{ background: 'rgba(255,255,255,0.03)' }} title="Modify Classification">
+                        <Edit3 className="w-3.5 h-3.5" style={{ color: '#64748b' }} />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (confirm(`Are you sure you want to PERMANENTLY DELETE ${doc.title}?`)) {
+                            const newDocs = documents.filter(d => d.id !== doc.id);
+                            setDocuments(newDocs);
+                            saveDocumentList(newDocs);
+                            logActivity('DELETE', `Permanently deleted document: ${doc.title}`, user || 'Unknown', '192.168.1.10', 'HIGH', doc.id);
+                          }
+                        }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/20"
+                        style={{ background: 'rgba(255,255,255,0.03)' }} title="Delete">
+                        <Trash2 className="w-3.5 h-3.5" style={{ color: '#ef4444' }} />
                       </button>
                     </div>
                   </td>
