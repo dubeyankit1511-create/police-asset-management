@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useUISettings } from '../context/UIContext';
 import {
   Shield, LayoutDashboard, FileLock2, History, LogOut,
-  ZoomIn, ZoomOut, Sun, Moon, Type, ChevronRight, Bell, Crown
+  ZoomIn, ZoomOut, Sun, Moon, Type, ChevronRight, Bell, Crown, UserCheck
 } from 'lucide-react';
 
 export const MainLayout = () => {
@@ -23,7 +23,8 @@ export const MainLayout = () => {
     { name: 'Evidence Vault', path: '/vault', icon: FileLock2, label: 'Documents' },
     // Admin-only nav items
     ...(user?.role === 'ADMIN' ? [
-      { name: 'Audit Trail', path: '/audit', icon: History, label: 'Logs' },
+      { name: 'Audit Trail', path: '/audit', icon: History, label: 'Activity Logs' },
+      { name: 'Access Logs', path: '/access-logs', icon: UserCheck, label: 'Login History' },
       { name: 'Admin Panel', path: '/admin', icon: Crown, label: 'User Management' }
     ] : []),
   ];

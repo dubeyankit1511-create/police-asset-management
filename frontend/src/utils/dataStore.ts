@@ -44,3 +44,31 @@ export const logActivity = (action: string, details: string, userObj: any, ip: s
   };
   saveAuditLogs([newLog, ...logs]);
 };
+export const getAccessLogs = () => {
+  const saved = localStorage.getItem('SECURE_SYNC_ACCESS_LOGS');
+  if (saved) return JSON.parse(saved);
+  return [];
+};
+
+export const saveAccessLogs = (logs: any[]) => {
+  localStorage.setItem('SECURE_SYNC_ACCESS_LOGS', JSON.stringify(logs));
+};
+
+export const logAccess = (action: 'LOGIN' | 'LOGOUT', userObj: any, ip: string = '192.168.1.10') => {
+  const logs = getAccessLogs();
+  
+  const name = userObj?.name || (typeof userObj === 'string' ? userObj : 'Unknown');
+  const badge = userObj?.badge || '';
+  const dept = userObj?.department || userObj?.dept || '';
+
+  const newLog = {
+    id: Date.now().toString(),
+    timestamp: new Date().toISOString(),
+    user: name,
+    badge,
+    dept,
+    action,
+    ip
+  };
+  saveAccessLogs([newLog, ...logs]);
+};

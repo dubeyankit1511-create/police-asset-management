@@ -8,6 +8,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Vault } from './pages/Vault';
 import { AuditViewer } from './pages/AuditViewer';
 import { AdminPanel } from './pages/AdminPanel';
+import { AccessLogs } from './pages/AccessLogs';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { token } = useAuth();
@@ -27,6 +28,7 @@ function App() {
               <Route path="vault" element={<Vault />} />
               <Route path="audit" element={<AuditViewer />} />
               <Route path="admin" element={<AdminPanel />} />
+              <Route path="access-logs" element={<AccessLogs />} />
             </Route>
           </Routes>
         </Router>

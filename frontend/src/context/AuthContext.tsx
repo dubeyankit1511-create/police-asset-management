@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import { logAccess } from '../utils/dataStore';
 
 interface AuthContextType {
   token: string | null;
@@ -18,9 +19,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('user', JSON.stringify(newUser));
     setToken(newToken);
     setUser(newUser);
+    logAccess('LOGIN', newUser);
   };
 
   const logout = () => {
+    if (user) {
+      logAccess('LOGOUT', user);
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);
