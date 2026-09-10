@@ -19,7 +19,9 @@ export const AuditViewer = () => {
   const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const filtered = getAuditLogs().filter(l => {
-    const matchSearch = !search || l.user.toLowerCase().includes(search.toLowerCase()) || l.doc.toLowerCase().includes(search.toLowerCase()) || l.badge.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search || 
+      (l.user && l.user.toLowerCase().includes(search.toLowerCase())) || 
+      (l.details && l.details.toLowerCase().includes(search.toLowerCase()));
     const matchAction = !actionFilter || l.action === actionFilter;
     return matchSearch && matchAction;
   });
@@ -33,7 +35,7 @@ export const AuditViewer = () => {
             Immutable Audit Trail
           </h1>
           <p className="text-sm mt-1" style={{ color: '#475569' }}>
-            Blockchain-anchored system activity log · Every action is permanently recorded
+            Blockchain-anchored system activity log - Every action is permanently recorded
           </p>
         </div>
         <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
@@ -81,9 +83,20 @@ export const AuditViewer = () => {
 
       {/* Timeline / Log list */}
       <div className="space-y-2">
-        {filtered.map((log) => {
+        {filtered.map((log: any) => {
           const style = actionStyles[log.action] || actionStyles.VIEW;
           const isExpanded = expandedId === log.id;
+          
+          let logDate = "Unknown Date";
+          let logTime = "Unknown Time";
+          if (log.timestamp) {
+            const d = new Date(log.timestamp);
+            logDate = d.toISOString().split('T')[0];
+            logTime = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          } else if (log.date) {
+            logDate = log.date;
+            logTime = log.time || "Unknown Time";
+          }
 
           return (
             <div key={log.id}
@@ -99,26 +112,30 @@ export const AuditViewer = () => {
 
                 {/* Main info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: '#cbd5e1' }}>{log.doc}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: '#cbd5e1' }}>{log.details || log.doc || "System Event"}</p>
                   <div className="flex items-center gap-3 mt-1 flex-wrap">
                     <span className="flex items-center gap-1 text-xs" style={{ color: '#475569' }}>
                       <User className="w-3 h-3" /> {log.user}
                     </span>
-                    <span className="text-xs font-mono" style={{ color: '#334155' }}>
-                      {log.badge}
-                    </span>
-                    <span className="text-xs" style={{ color: '#334155' }}>
-                      {log.dept}
-                    </span>
+                    {log.badge && (
+                      <span className="text-xs font-mono" style={{ color: '#334155' }}>
+                        {log.badge}
+                      </span>
+                    )}
+                    {log.dept && (
+                      <span className="text-xs" style={{ color: '#334155' }}>
+                        {log.dept}
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 {/* Risk + time */}
                 <div className="flex items-center gap-4 shrink-0">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: riskDot[log.risk], boxShadow: `0 0 8px ${riskDot[log.risk]}` }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: riskDot[log.risk?.toLowerCase() || 'low'], boxShadow: `0 0 8px ${riskDot[log.risk?.toLowerCase() || 'low']}` }} />
                   <div className="text-right">
-                    <div className="text-xs font-mono" style={{ color: '#475569' }}>{log.time}</div>
-                    <div className="text-[10px]" style={{ color: '#334155' }}>{log.date}</div>
+                    <div className="text-xs font-mono" style={{ color: '#475569' }}>{logTime}</div>
+                    <div className="text-[10px]" style={{ color: '#334155' }}>{logDate}</div>
                   </div>
                 </div>
               </div>
@@ -135,13 +152,13 @@ export const AuditViewer = () => {
                       </div>
                       <div>
                         <span className="block tracking-widest uppercase font-bold mb-0.5" style={{ color: '#334155' }}>Risk Level</span>
-                        <span className="font-semibold capitalize" style={{ color: riskDot[log.risk] }}>{log.risk}</span>
+                        <span className="font-semibold capitalize" style={{ color: riskDot[log.risk?.toLowerCase() || 'low'] }}>{log.risk}</span>
                       </div>
                       <div className="col-span-2">
                         <span className="block tracking-widest uppercase font-bold mb-0.5" style={{ color: '#334155' }}>Blockchain Transaction</span>
                         <div className="flex items-center gap-2">
                           <Link2 className="w-3 h-3 shrink-0" style={{ color: '#0ea5e9' }} />
-                          <span className="font-mono" style={{ color: '#38bdf8' }}>{log.txId}</span>
+                          <span className="font-mono" style={{ color: '#38bdf8' }}>{log.txId || log.hash}</span>
                           <Shield className="w-3 h-3 shrink-0" style={{ color: '#10b981' }} />
                           <span className="text-[10px] font-bold" style={{ color: '#10b981' }}>Anchored</span>
                         </div>

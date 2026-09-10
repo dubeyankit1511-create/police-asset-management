@@ -30,9 +30,21 @@ export const Vault = () => {
   const [upClass, setUpClass] = useState('RESTRICTED');
   const [fileAttached, setFileAttached] = useState<File | null>(null);
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (!upTitle || !upCaseId) return alert('Please provide Title and Case ID');
     
+    let fileData = null;
+    let originalName = 'unknown.pdf';
+    
+    if (fileAttached) {
+      originalName = fileAttached.name;
+      fileData = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(fileAttached);
+      });
+    }
+
     const newDoc = {
       id: Date.now().toString(),
       title: upTitle,
@@ -40,10 +52,12 @@ export const Vault = () => {
       classification: upClass,
       hash: '0x' + Array.from({length: 16}, () => Math.floor(Math.random()*16).toString(16)).join('') + '...f9e',
       status: 'Verified',
-      type: fileAttached ? fileAttached.name.split('.').pop()?.toUpperCase() || 'PDF' : 'PDF',
+      type: fileAttached ? originalName.split('.').pop()?.toUpperCase() || 'PDF' : 'PDF',
       size: fileAttached ? (fileAttached.size / 1024 / 1024).toFixed(2) + ' MB' : '1.2 MB',
       date: new Date().toISOString().split('T')[0],
-      creator: user ? `${user.name} \u00B7 ${user.badge}` : 'Unknown Officer'
+      creator: user ? `${user.name} \u00B7 ${user.badge}` : 'Unknown Officer',
+      fileData,
+      originalName
     };
 
     const updatedDocs = [newDoc, ...documents];
@@ -268,7 +282,19 @@ export const Vault = () => {
                         style={{ background: 'rgba(255,255,255,0.03)' }} title="View">
                         <Eye className="w-3.5 h-3.5" style={{ color: '#64748b' }} />
                       </button>
-                      <button className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                      <button 
+                        onClick={() => {
+                          if (doc.fileData) {
+                            const a = document.createElement('a');
+                            a.href = doc.fileData;
+                            a.download = doc.originalName || `${doc.title}.${doc.type.toLowerCase()}`;
+                            a.click();
+                            logActivity('DOWNLOAD', `Downloaded document: ${doc.title}`, user ? user.name : 'Unknown', '192.168.1.10', 'LOW');
+                          } else {
+                            alert('File content not available for this record.');
+                          }
+                        }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
                         style={{ background: 'rgba(255,255,255,0.03)' }} title="Download">
                         <Download className="w-3.5 h-3.5" style={{ color: '#64748b' }} />
                       </button>
