@@ -47,47 +47,79 @@ export const AdminPanel = () => {
   const openCreate = () => { resetForm(); setShowModal(true); };
   const openEdit = (u: any) => {
     setEditingUser(u);
-    setForm({ firstName: u.firstName, lastName: u.lastName, email: u.email, badgeNumber: u.badgeNumber, role: u.role, department: u.department, password: '' });
+    setForm({ firstName: u.firstName, lastName: u.lastName, email: u.email, badgeNumber: u.id || u.badgeNumber || '', role: u.role, department: u.department, password: '' });
     setShowModal(true);
   };
 
   const handleSave = () => {
+    // Validation
+    if (!form.firstName.trim() || !form.lastName.trim()) { alert('First and Last name are required.'); return; }
+    if (!form.badgeNumber.trim()) { alert('Badge Number is required (this is the login ID).'); return; }
+    if (!editingUser && !form.password.trim()) { alert('Password is required for new users.'); return; }
+    if (!form.email.trim()) { alert('Email is required.'); return; }
+
     const directory = getUserDirectory();
-    let newUsers;
+    const badgeKey = form.badgeNumber.trim().toUpperCase();
+
+    if (!editingUser) {
+      // CHECK: badge must be unique
+      if (directory[badgeKey]) { alert(`Badge number "${badgeKey}" is already in use. Choose a different badge.`); return; }
+    }
 
     if (editingUser) {
-      newUsers = users.map(u => {
-        if (u.id === editingUser.id) {
-          const updatedUser = { ...u, ...form };
-          if (!form.password) updatedUser.password = u.password;
-          directory[updatedUser.badgeNumber] = updatedUser;
-          if (editingUser.badgeNumber !== updatedUser.badgeNumber) {
-            delete directory[editingUser.badgeNumber];
-          }
-          return updatedUser;
-        }
-        return u;
-      });
+      // EDIT — update in place
+      const updatedUser = {
+        ...editingUser,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
+        badgeNumber: badgeKey,
+        id: badgeKey,
+        role: form.role,
+        department: form.department.trim(),
+        password: form.password.trim() || editingUser.password,
+        name: form.firstName.trim() + ' ' + form.lastName.trim(),
+      };
+
+      // If badge changed, remove old key
+      if (editingUser.id !== badgeKey) {
+        delete directory[editingUser.id];
+      }
+      directory[badgeKey] = updatedUser;
+      saveUserDirectory(directory);
+      setUsers(Object.values(getUserDirectory()));
     } else {
-      const newUser = { id: form.badgeNumber, ...form, createdAt: new Date().toISOString().split('T')[0] };
-      newUsers = [newUser, ...users];
-      directory[form.badgeNumber] = newUser;
+      // CREATE — new user entry
+      const newUser = {
+        id: badgeKey,
+        badgeNumber: badgeKey,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        name: form.firstName.trim() + ' ' + form.lastName.trim(),
+        email: form.email.trim(),
+        role: form.role,
+        department: form.department.trim(),
+        password: form.password.trim(),
+        createdAt: new Date().toISOString().split('T')[0],
+      };
+      directory[badgeKey] = newUser;
+      saveUserDirectory(directory);
+      setUsers(Object.values(getUserDirectory()));
+      alert(`✅ User "${newUser.name}" created! They can now login with:\n  Badge: ${badgeKey}\n  Password: ${form.password.trim()}`);
     }
-    
-    setUsers(newUsers);
-    saveUserDirectory(directory);
+
     setShowModal(false);
     resetForm();
   };
 
   const handleDelete = (id: string) => {
+    // Prevent deleting the Super Admin
+    if (id === 'SA-0001') { alert('The Super Administrator account cannot be deleted.'); setDeleteConfirm(null); return; }
     const directory = getUserDirectory();
-    const userToDelete = users.find(u => u.id === id);
-    if (userToDelete) {
-      delete directory[userToDelete.badgeNumber];
-      saveUserDirectory(directory);
-    }
-    setUsers(users.filter(u => u.id !== id));
+    // id is always the badge number (directory key)
+    delete directory[id];
+    saveUserDirectory(directory);
+    setUsers(Object.values(getUserDirectory()));
     setDeleteConfirm(null);
   };
 
