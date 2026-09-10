@@ -4,7 +4,7 @@ import {
   ChevronDown, Hash, FileText, Image, FileSpreadsheet, Eye, Download, Share2, MoreHorizontal, Edit3, Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getDocumentList, saveDocumentList, logActivity, addPendingDocument } from '../utils/dataStore';
+import { getDocumentList, saveDocumentList, logActivity, addPendingDocument, addNotification } from '../utils/dataStore';
 
 const classificationColors: Record<string, { bg: string; border: string; text: string }> = {
   CONFIDENTIAL: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', text: '#f87171' },
@@ -69,6 +69,11 @@ export const Vault = () => {
       
       // Log the activity
       logActivity('UPLOAD', `Submitted document for verification: ${upTitle}`, user || 'Unknown User', '192.168.1.10', upClass === 'PUBLIC' ? 'LOW' : 'MEDIUM', newDoc.id);
+      
+      // Notify admin that a new document is waiting for review
+      addNotification('ADMIN', `📄 New document pending verification: "${upTitle}" submitted by ${user?.name || 'Unknown'} (${user?.badge || ''})`, 'warning');
+      // Notify the user their upload is in queue
+      addNotification('USER', `✅ Your document "${upTitle}" has been submitted and is waiting for admin verification.`, 'info');
 
       alert(`Document "${upTitle}" has been submitted for admin verification. It will appear in the Evidence Vault once approved.`);
 

@@ -3,7 +3,7 @@ import { CheckCircle, XCircle, Download, Eye, Clock, Shield, AlertTriangle } fro
 import { useAuth } from '../context/AuthContext';
 import {
   getPendingDocuments, savePendingDocuments,
-  getDocumentList, saveDocumentList, logActivity
+  getDocumentList, saveDocumentList, logActivity, addNotification
 } from '../utils/dataStore';
 
 const classificationColors: Record<string, { bg: string; border: string; text: string }> = {
@@ -38,6 +38,7 @@ export const DocVerification = () => {
     setPending(updated);
 
     logActivity('MODIFY', `Approved & verified document: ${doc.title}`, user, '192.168.1.10', 'LOW', doc.id);
+    addNotification('USER', `✅ Your document "${doc.title}" has been APPROVED and is now available in the Evidence Vault.`, 'success');
     alert(`✅ Document "${doc.title}" has been APPROVED and added to the Evidence Vault.`);
   };
 
@@ -51,6 +52,7 @@ export const DocVerification = () => {
     setPending(updated);
 
     logActivity('DELETE', `Rejected document: ${doc.title} — Reason: ${reason}`, user, '192.168.1.10', 'HIGH', doc.id);
+    addNotification('USER', `❌ Your document "${doc.title}" was REJECTED by admin. Reason: ${reason}`, 'error');
     alert(`❌ Document "${doc.title}" has been REJECTED and permanently removed.`);
   };
 

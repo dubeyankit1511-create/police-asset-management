@@ -17,6 +17,41 @@ export const addPendingDocument = (doc: any) => {
   savePendingDocuments([doc, ...pending]);
 };
 
+// --- Notifications ---
+export const getNotifications = (role: string) => {
+  const key = role === 'ADMIN' ? 'SECURE_SYNC_NOTIF_ADMIN' : 'SECURE_SYNC_NOTIF_USER';
+  const saved = localStorage.getItem(key);
+  if (saved) return JSON.parse(saved);
+  return [];
+};
+
+export const saveNotifications = (role: string, notifs: any[]) => {
+  const key = role === 'ADMIN' ? 'SECURE_SYNC_NOTIF_ADMIN' : 'SECURE_SYNC_NOTIF_USER';
+  localStorage.setItem(key, JSON.stringify(notifs));
+};
+
+export const addNotification = (role: 'ADMIN' | 'USER', message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info') => {
+  const notifs = getNotifications(role);
+  const newNotif = {
+    id: Date.now().toString(),
+    message,
+    type,
+    read: false,
+    timestamp: new Date().toISOString(),
+  };
+  saveNotifications(role, [newNotif, ...notifs]);
+};
+
+export const markAllNotificationsRead = (role: string) => {
+  const notifs = getNotifications(role);
+  const updated = notifs.map((n: any) => ({ ...n, read: true }));
+  saveNotifications(role, updated);
+};
+
+export const clearNotifications = (role: string) => {
+  saveNotifications(role, []);
+};
+
 export const getDocumentList = () => {
   const saved = localStorage.getItem('SECURE_SYNC_DOCS');
   if (saved) return JSON.parse(saved);

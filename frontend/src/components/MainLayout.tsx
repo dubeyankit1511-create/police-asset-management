@@ -1,17 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUISettings } from '../context/UIContext';
 import {
   Shield, LayoutDashboard, FileLock2, History, LogOut,
-  ZoomIn, ZoomOut, Sun, Moon, Type, ChevronRight, Bell, Crown, UserCheck, ClipboardCheck
+  ZoomIn, ZoomOut, Sun, Moon, Type, ChevronRight, Bell, Crown, UserCheck, ClipboardCheck, X
 } from 'lucide-react';
+import { getNotifications, markAllNotificationsRead, clearNotifications } from '../utils/dataStore';
 
 export const MainLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { fontSize, zoom, darkMode, setFontSize, setZoom, toggleDarkMode } = useUISettings();
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [notifList, setNotifList] = useState<any[]>(() => getNotifications(user?.role || 'USER'));
+
+  const role = user?.role === 'ADMIN' ? 'ADMIN' : 'USER';
+  const unreadCount = notifList.filter((n: any) => !n.read).length;
+
+  const handleBellClick = () => {
+    const fresh = getNotifications(role);
+    setNotifList(fresh);
+    setShowNotifs(v => !v);
+  };
+
+  const handleMarkRead = () => {
+    markAllNotificationsRead(role);
+    setNotifList(getNotifications(role));
+  };
+
+  const handleClear = () => {
+    clearNotifications(role);
+    setNotifList([]);
+  };
 
   const handleLogout = () => {
     logout();
@@ -21,7 +43,6 @@ export const MainLayout = () => {
   const navItems = [
     { name: 'Command Center', path: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { name: 'Evidence Vault', path: '/vault', icon: FileLock2, label: 'Documents' },
-    // Admin-only nav items
     ...(user?.role === 'ADMIN' ? [
       { name: 'Audit Trail', path: '/audit', icon: History, label: 'Activity Logs' },
       { name: 'Access Logs', path: '/access-logs', icon: UserCheck, label: 'Login History' },
@@ -29,6 +50,10 @@ export const MainLayout = () => {
       { name: 'Admin Panel', path: '/admin', icon: Crown, label: 'User Management' }
     ] : []),
   ];
+
+  const notifColors: Record<string, string> = {
+    info: '#0ea5e9', success: '#10b981', warning: '#f59e0b', error: '#ef4444'
+  };
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#030712' }}>
@@ -87,7 +112,7 @@ export const MainLayout = () => {
             <span className="text-[10px] flex-1" style={{ color: '#475569' }}>Font Size: {fontSize}px</span>
             <button onClick={() => setFontSize(Math.max(12, fontSize - 1))}
               className="w-6 h-6 rounded flex items-center justify-center text-xs transition-colors"
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>−</button>
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>-</button>
             <button onClick={() => setFontSize(Math.min(20, fontSize + 1))}
               className="w-6 h-6 rounded flex items-center justify-center text-xs transition-colors"
               style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8' }}>+</button>
@@ -122,8 +147,8 @@ export const MainLayout = () => {
           </div>
         </div>
 
-        {/* User profile */}
-        <div className="p-4" style={{ borderTop: '1px solid rgba(240,165,0,0.1)' }}>
+        {/* User profile + Notification Bell */}
+        <div className="p-4 relative" style={{ borderTop: '1px solid rgba(240,165,0,0.1)' }}>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm"
               style={{ background: 'linear-gradient(135deg, #f0a500, #d97706)', color: '#030712' }}>
@@ -133,8 +158,72 @@ export const MainLayout = () => {
               <p className="text-xs font-bold truncate" style={{ color: '#e2e8f0' }}>{(user?.name as string) || 'Officer'}</p>
               <p className="text-[10px]" style={{ color: '#64748b' }}>{(user?.role as string) || 'OFFICER'}</p>
             </div>
-            <Bell className="w-4 h-4 shrink-0" style={{ color: '#475569' }} />
+
+            {/* Bell Button */}
+            <button onClick={handleBellClick}
+              className="relative w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:bg-white/10"
+              style={{ background: unreadCount > 0 ? 'rgba(240,165,0,0.1)' : 'transparent', border: unreadCount > 0 ? '1px solid rgba(240,165,0,0.3)' : '1px solid transparent' }}>
+              <Bell className="w-4 h-4" style={{ color: unreadCount > 0 ? '#f0a500' : '#475569' }} />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-black"
+                  style={{ background: '#ef4444', color: '#fff' }}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
           </div>
+
+          {/* Notification Dropdown */}
+          {showNotifs && (
+            <div className="absolute bottom-full left-2 right-2 mb-2 rounded-xl overflow-hidden z-50 shadow-2xl"
+              style={{ background: '#0a0f1e', border: '1px solid rgba(240,165,0,0.2)', maxHeight: '320px' }}>
+              
+              {/* Header */}
+              <div className="px-4 py-3 flex items-center justify-between"
+                style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <span className="text-xs font-black" style={{ color: '#e2e8f0' }}>
+                  {role === 'ADMIN' ? 'Admin Notifications' : 'Your Notifications'}
+                </span>
+                <div className="flex items-center gap-2">
+                  {notifList.length > 0 && (
+                    <>
+                      <button onClick={handleMarkRead} className="text-[10px]" style={{ color: '#64748b' }}>Mark all read</button>
+                      <button onClick={handleClear} className="text-[10px]" style={{ color: '#ef4444' }}>Clear</button>
+                    </>
+                  )}
+                  <button onClick={() => setShowNotifs(false)}>
+                    <X className="w-3.5 h-3.5" style={{ color: '#475569' }} />
+                  </button>
+                </div>
+              </div>
+
+              {/* List */}
+              <div className="overflow-y-auto" style={{ maxHeight: '240px' }}>
+                {notifList.length === 0 ? (
+                  <div className="px-4 py-6 text-center text-xs" style={{ color: '#475569' }}>
+                    No notifications
+                  </div>
+                ) : (
+                  notifList.map((n: any) => (
+                    <div key={n.id} className="px-4 py-3 border-b"
+                      style={{ borderColor: 'rgba(255,255,255,0.04)', background: n.read ? 'transparent' : 'rgba(240,165,0,0.03)' }}>
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
+                          style={{ background: n.read ? '#334155' : notifColors[n.type] || '#0ea5e9' }} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] leading-relaxed" style={{ color: n.read ? '#475569' : '#cbd5e1' }}>{n.message}</p>
+                          <p className="text-[10px] mt-1" style={{ color: '#334155' }}>
+                            {new Date(n.timestamp).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           <button onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-semibold transition-all"
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444' }}>
@@ -152,7 +241,7 @@ export const MainLayout = () => {
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs" style={{ color: '#475569' }}>
-                All systems operational · Evidence integrity: <span style={{ color: '#10b981' }}>100%</span>
+                All systems operational — Evidence integrity: <span style={{ color: '#10b981' }}>100%</span>
               </span>
             </div>
           </div>
