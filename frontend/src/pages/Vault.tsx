@@ -4,7 +4,7 @@ import {
   ChevronDown, Hash, FileText, Image, FileSpreadsheet, Eye, Download, Share2, MoreHorizontal, Edit3, Trash2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getDocumentList, saveDocumentList, logActivity } from '../utils/dataStore';
+import { getDocumentList, saveDocumentList, logActivity, addPendingDocument } from '../utils/dataStore';
 
 const classificationColors: Record<string, { bg: string; border: string; text: string }> = {
   CONFIDENTIAL: { bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.3)', text: '#f87171' },
@@ -51,23 +51,26 @@ export const Vault = () => {
       caseId: upCaseId,
       classification: upClass,
       hash: '0x' + Array.from({length: 16}, () => Math.floor(Math.random()*16).toString(16)).join('') + '...f9e',
-      status: 'Verified',
+      status: 'Pending',
       type: fileAttached ? originalName.split('.').pop()?.toUpperCase() || 'PDF' : 'PDF',
       size: fileAttached ? (fileAttached.size / 1024 / 1024).toFixed(2) + ' MB' : '1.2 MB',
       date: new Date().toISOString().split('T')[0],
-      creator: user ? `${user.name} \u00B7 ${user.badge}` : 'Unknown Officer',
+      uploadedAt: new Date().toISOString(),
+      creator: user ? `${user.name} · ${user.badge}` : 'Unknown Officer',
+      uploaderName: user?.name || 'Unknown',
+      uploaderBadge: user?.badge || '',
       fileData,
       originalName
     };
 
-    const updatedDocs = [newDoc, ...documents];
-    
     try {
-      saveDocumentList(updatedDocs);
-      setDocuments(updatedDocs);
+      // Send to PENDING queue — admin must verify before it appears in the vault
+      addPendingDocument(newDoc);
       
       // Log the activity
-      logActivity('UPLOAD', `Uploaded document: ${upTitle}`, user || 'Unknown User', '192.168.1.10', upClass === 'PUBLIC' ? 'LOW' : 'MEDIUM', newDoc.id);
+      logActivity('UPLOAD', `Submitted document for verification: ${upTitle}`, user || 'Unknown User', '192.168.1.10', upClass === 'PUBLIC' ? 'LOW' : 'MEDIUM', newDoc.id);
+
+      alert(`Document "${upTitle}" has been submitted for admin verification. It will appear in the Evidence Vault once approved.`);
 
       // Reset and close
       setUpTitle('');

@@ -1,45 +1,24 @@
-import React from 'react';
-import { ShieldAlert, FileText, Users, Activity, TrendingUp, Lock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { ShieldAlert, FileText, Users, Activity, TrendingUp, Lock, AlertTriangle, CheckCircle, Download } from 'lucide-react';
+import { getDocumentList, getAuditLogs, getPendingDocuments } from '../utils/dataStore';
+import { getUserDirectory } from '../utils/userStore';
 
-const StatCard = ({ icon: Icon, label, value, color, delta }: {
-  icon: any; label: string; value: string; color: string; delta?: string;
-}) => (
-  <div className="relative rounded-2xl p-5 overflow-hidden cursor-default card-glass card-3d"
-    style={{ borderColor: `${color}30` }}>
-    <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-5"
-      style={{ background: color, transform: 'translate(30%, -30%)' }} />
-    <div className="flex items-start justify-between mb-4">
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center icon-bounce"
-        style={{ background: `${color}15`, border: `1px solid ${color}30` }}>
-        <Icon className="w-5 h-5" style={{ color }} />
-      </div>
-      {delta && (
-        <span className="text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1"
-          style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
-          <TrendingUp className="w-3 h-3" />{delta}
-        </span>
-      )}
-    </div>
-    <div className="text-2xl font-black mb-1 stat-value transition-all" style={{ color: '#e2e8f0' }}>{value}</div>
-    <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#475569' }}>{label}</div>
-    <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-30" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
-  </div>
-);
-
-const recentActivities = [
-  { action: 'DOWNLOAD', user: 'Adil Ahmed · PD-1001', doc: 'Forensic Lab Report #FLR-2024-441 — Case #8992', time: '2 min ago', risk: 'low' },
-  { action: 'UPLOAD', user: 'Ahtisham Ahmed · PD-1002', doc: 'Crime Scene Photography Set — Case #8992', time: '18 min ago', risk: 'low' },
-  { action: 'SHARE', user: 'Akash Chouchan · PD-1003', doc: 'Suspect Interview Transcript — Case #8992', time: '1h ago', risk: 'medium' },
-  { action: 'VIEW', user: 'Abdul Ahad · PD-1004', doc: 'Chain of Custody Form #CC-2024-88 — Case #8992', time: '2h ago', risk: 'low' },
-  { action: 'MODIFY', user: 'Adil Ahmed · PD-1001', doc: 'Case Summary Report — Case #8992', time: '3h ago', risk: 'high' },
-];
-
-const riskColors: Record<string, string> = { low: '#10b981', medium: '#f59e0b', high: '#ef4444' };
 const actionColors: Record<string, string> = {
-  DOWNLOAD: '#0ea5e9', UPLOAD: '#10b981', SHARE: '#a855f7', VIEW: '#64748b', MODIFY: '#f59e0b'
+  DOWNLOAD: '#0ea5e9', UPLOAD: '#10b981', SHARE: '#a855f7',
+  VIEW: '#64748b', MODIFY: '#f59e0b', DELETE: '#ef4444'
 };
+const riskColors: Record<string, string> = { LOW: '#10b981', MEDIUM: '#f59e0b', HIGH: '#ef4444' };
 
 export const Dashboard = () => {
+  const docs = getDocumentList();
+  const logs = getAuditLogs();
+  const pending = getPendingDocuments();
+  const users = getUserDirectory();
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayEvents = logs.filter((l: any) => (l.timestamp || '').startsWith(todayStr));
+  const recentActivity = logs.slice(0, 5);
+  const userCount = Object.keys(users).length;
+
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Page header */}
@@ -57,19 +36,90 @@ export const Dashboard = () => {
             style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#10b981' }}>
             <CheckCircle className="w-4 h-4" /> All Systems Operational
           </div>
-          <div className="px-4 py-2 rounded-xl flex items-center gap-2 text-xs font-semibold"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
-            <AlertTriangle className="w-4 h-4" /> 2 Alerts
-          </div>
+          {pending.length > 0 && (
+            <div className="px-4 py-2 rounded-xl flex items-center gap-2 text-xs font-semibold"
+              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444' }}>
+              <AlertTriangle className="w-4 h-4" /> {pending.length} Docs Pending Verification
+            </div>
+          )}
         </div>
       </div>
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={ShieldAlert} label="Active Cases" value="1,204" color="#f0a500" delta="+12%" />
-        <StatCard icon={FileText} label="Secured Documents" value="45,912" color="#0ea5e9" delta="+8%" />
-        <StatCard icon={Activity} label="Audit Events Today" value="342" color="#10b981" />
-        <StatCard icon={Users} label="Active Personnel" value="89" color="#a855f7" delta="+3" />
+
+        {/* Secured Documents */}
+        <div className="relative rounded-2xl p-5 overflow-hidden card-glass" style={{ borderColor: '#0ea5e930' }}>
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-5"
+            style={{ background: '#0ea5e9', transform: 'translate(30%,-30%)' }} />
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: '#0ea5e915', border: '1px solid #0ea5e930' }}>
+              <FileText className="w-5 h-5" style={{ color: '#0ea5e9' }} />
+            </div>
+            {docs.length > 0 && (
+              <span className="text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-1"
+                style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>
+                <TrendingUp className="w-3 h-3" />Live
+              </span>
+            )}
+          </div>
+          <div className="text-2xl font-black mb-1" style={{ color: '#e2e8f0' }}>{docs.length}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#475569' }}>Secured Documents</div>
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-30" style={{ background: 'linear-gradient(90deg,#0ea5e9,transparent)' }} />
+        </div>
+
+        {/* Audit Events Today */}
+        <div className="relative rounded-2xl p-5 overflow-hidden card-glass" style={{ borderColor: '#10b98130' }}>
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-5"
+            style={{ background: '#10b981', transform: 'translate(30%,-30%)' }} />
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: '#10b98115', border: '1px solid #10b98130' }}>
+              <Activity className="w-5 h-5" style={{ color: '#10b981' }} />
+            </div>
+          </div>
+          <div className="text-2xl font-black mb-1" style={{ color: '#e2e8f0' }}>{todayEvents.length}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#475569' }}>Audit Events Today</div>
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-30" style={{ background: 'linear-gradient(90deg,#10b981,transparent)' }} />
+        </div>
+
+        {/* Active Personnel */}
+        <div className="relative rounded-2xl p-5 overflow-hidden card-glass" style={{ borderColor: '#a855f730' }}>
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-5"
+            style={{ background: '#a855f7', transform: 'translate(30%,-30%)' }} />
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: '#a855f715', border: '1px solid #a855f730' }}>
+              <Users className="w-5 h-5" style={{ color: '#a855f7' }} />
+            </div>
+          </div>
+          <div className="text-2xl font-black mb-1" style={{ color: '#e2e8f0' }}>{userCount}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#475569' }}>Active Personnel</div>
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-30" style={{ background: 'linear-gradient(90deg,#a855f7,transparent)' }} />
+        </div>
+
+        {/* Pending Verification */}
+        <div className="relative rounded-2xl p-5 overflow-hidden card-glass" style={{ borderColor: '#f59e0b30' }}>
+          <div className="absolute top-0 right-0 w-32 h-32 rounded-full opacity-5"
+            style={{ background: '#f59e0b', transform: 'translate(30%,-30%)' }} />
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: '#f59e0b15', border: '1px solid #f59e0b30' }}>
+              <ShieldAlert className="w-5 h-5" style={{ color: '#f59e0b' }} />
+            </div>
+            {pending.length > 0 && (
+              <span className="text-xs font-semibold px-2 py-1 rounded-full"
+                style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+                !
+              </span>
+            )}
+          </div>
+          <div className="text-2xl font-black mb-1" style={{ color: '#e2e8f0' }}>{pending.length}</div>
+          <div className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#475569' }}>Pending Verification</div>
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 opacity-30" style={{ background: 'linear-gradient(90deg,#f59e0b,transparent)' }} />
+        </div>
+
       </div>
 
       {/* Content row */}
@@ -89,22 +139,35 @@ export const Dashboard = () => {
           </div>
 
           <div className="divide-y" style={{ borderColor: 'rgba(255,255,255,0.03)' }}>
-            {recentActivities.map((log, i) => (
-              <div key={i} className="px-5 py-3 flex items-center gap-4 evidence-row transition-all">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-black"
-                  style={{ background: `${actionColors[log.action]}15`, color: actionColors[log.action], border: `1px solid ${actionColors[log.action]}30` }}>
-                  {log.action.slice(0, 2)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: '#cbd5e1' }}>{log.doc}</p>
-                  <p className="text-xs truncate" style={{ color: '#475569' }}>{log.user}</p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="w-2 h-2 rounded-full" style={{ background: riskColors[log.risk] }} />
-                  <span className="text-xs font-mono" style={{ color: '#334155' }}>{log.time}</span>
-                </div>
+            {recentActivity.length === 0 ? (
+              <div className="px-5 py-8 text-center text-sm" style={{ color: '#475569' }}>
+                No activity recorded yet. Start uploading documents to see live activity here.
               </div>
-            ))}
+            ) : (
+              recentActivity.map((log: any, i: number) => {
+                const dateObj = new Date(log.timestamp);
+                const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const color = actionColors[log.action] || '#64748b';
+                return (
+                  <div key={i} className="px-5 py-3 flex items-center gap-4 transition-all hover:bg-white/5">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-black"
+                      style={{ background: `${color}15`, color, border: `1px solid ${color}30` }}>
+                      {log.action.slice(0, 2)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate" style={{ color: '#cbd5e1' }}>{log.details}</p>
+                      <p className="text-xs truncate" style={{ color: '#475569' }}>
+                        {log.user} {log.badge ? `· ${log.badge}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="w-2 h-2 rounded-full" style={{ background: riskColors[log.risk] || '#10b981' }} />
+                      <span className="text-xs font-mono" style={{ color: '#334155' }}>{timeStr}</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -113,36 +176,31 @@ export const Dashboard = () => {
           <div className="px-5 py-4" style={{ borderBottom: '1px solid rgba(240,165,0,0.1)' }}>
             <div className="flex items-center gap-2">
               <Lock className="w-4 h-4" style={{ color: '#f0a500' }} />
-              <span className="text-sm font-bold" style={{ color: '#e2e8f0' }}>Integrity Status</span>
+              <span className="text-sm font-bold" style={{ color: '#e2e8f0' }}>Vault Status</span>
             </div>
           </div>
           <div className="p-5 space-y-4">
             {[
-              { label: 'Verified (SHA-256)', val: 45818, pct: 99.8, color: '#10b981' },
-              { label: 'Blockchain Anchored', val: 45241, pct: 98.5, color: '#0ea5e9' },
-              { label: 'Pending Review', val: 89, pct: 0.2, color: '#f59e0b' },
-              { label: 'Flagged', val: 5, pct: 0.01, color: '#ef4444' },
-            ].map((item) => (
-              <div key={item.label}>
-                <div className="flex justify-between text-xs mb-1.5">
-                  <span style={{ color: '#64748b' }}>{item.label}</span>
-                  <span className="font-mono font-semibold" style={{ color: item.color }}>{item.pct}%</span>
+              { label: 'Verified Documents', value: docs.filter((d: any) => d.status === 'Verified').length, total: docs.length, color: '#10b981' },
+              { label: 'Pending Review', value: pending.length, total: pending.length + docs.length, color: '#f59e0b' },
+              { label: 'Total Logs', value: logs.length, total: logs.length, color: '#0ea5e9' },
+            ].map((item, i) => (
+              <div key={i}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold" style={{ color: '#64748b' }}>{item.label}</span>
+                  <span className="text-xs font-black" style={{ color: item.color }}>{item.value}</span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                  <div className="h-full rounded-full transition-all"
-                    style={{ width: `${item.pct}%`, background: item.color, boxShadow: `0 0 6px ${item.color}` }} />
+                <div className="w-full h-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <div className="h-full rounded-full transition-all duration-500"
+                    style={{ width: item.total > 0 ? `${Math.min(100, Math.round((item.value / item.total) * 100))}%` : '0%', background: item.color, boxShadow: `0 0 8px ${item.color}` }} />
                 </div>
               </div>
             ))}
 
-            {/* Chain indicator */}
-            <div className="mt-6 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="text-xs font-semibold" style={{ color: '#10b981' }}>Blockchain Node Active</span>
-              </div>
-              <div className="text-xs font-mono p-2 rounded-lg" style={{ background: 'rgba(10,15,30,0.8)', color: '#334155', wordBreak: 'break-all' }}>
-                Latest Tx: 0x8f3d2a...44c9e1
+            <div className="pt-3 mt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle className="w-3.5 h-3.5" style={{ color: '#10b981' }} />
+                <span className="text-xs" style={{ color: '#475569' }}>Blockchain integrity active</span>
               </div>
             </div>
           </div>

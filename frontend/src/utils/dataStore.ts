@@ -1,6 +1,22 @@
 export const defaultDocuments = [];
 export const defaultLogs = [];
 
+// --- Pending Verification Queue ---
+export const getPendingDocuments = () => {
+  const saved = localStorage.getItem('SECURE_SYNC_PENDING_DOCS');
+  if (saved) return JSON.parse(saved);
+  return [];
+};
+
+export const savePendingDocuments = (docs: any[]) => {
+  localStorage.setItem('SECURE_SYNC_PENDING_DOCS', JSON.stringify(docs));
+};
+
+export const addPendingDocument = (doc: any) => {
+  const pending = getPendingDocuments();
+  savePendingDocuments([doc, ...pending]);
+};
+
 export const getDocumentList = () => {
   const saved = localStorage.getItem('SECURE_SYNC_DOCS');
   if (saved) return JSON.parse(saved);

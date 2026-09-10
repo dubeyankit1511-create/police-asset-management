@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useUISettings } from '../context/UIContext';
 import {
   Shield, LayoutDashboard, FileLock2, History, LogOut,
-  ZoomIn, ZoomOut, Sun, Moon, Type, ChevronRight, Bell, Crown, UserCheck
+  ZoomIn, ZoomOut, Sun, Moon, Type, ChevronRight, Bell, Crown, UserCheck, ClipboardCheck
 } from 'lucide-react';
 
 export const MainLayout = () => {
@@ -25,6 +25,7 @@ export const MainLayout = () => {
     ...(user?.role === 'ADMIN' ? [
       { name: 'Audit Trail', path: '/audit', icon: History, label: 'Activity Logs' },
       { name: 'Access Logs', path: '/access-logs', icon: UserCheck, label: 'Login History' },
+      { name: 'Doc Verification', path: '/doc-verification', icon: ClipboardCheck, label: 'Review Queue' },
       { name: 'Admin Panel', path: '/admin', icon: Crown, label: 'User Management' }
     ] : []),
   ];
